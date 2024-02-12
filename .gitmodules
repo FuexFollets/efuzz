@@ -8,3 +8,6 @@
 	path = thirdparty/annoy
 	url = https://github.com/FuexFollets/annoy.git
 	branch = serialization
+[submodule "Constants"]
+	path = Constants
+	url = https://github.com/FuexFollets/Constants.git
