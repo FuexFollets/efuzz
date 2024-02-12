@@ -48,3 +48,6 @@ include
 ### CMake Patch ###
 # External projects
 *-prefix/
+
+# Editor files
+.cache
