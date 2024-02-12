@@ -4,3 +4,7 @@
 [submodule "lib/cereal"]
 	path = lib/cereal
 	url = https://github.com/USCiLab/cereal.git
+[submodule "lib/annoy"]
+	path = lib/annoy
+	url = https://github.com/FuexFollets/annoy.git
+	branch = serialization
