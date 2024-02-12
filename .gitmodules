@@ -1,10 +1,10 @@
 [submodule "lib/eigen"]
-	path = lib/eigen
+	path = thirdparty/eigen
 	url = https://github.com/libigl/eigen.git
 [submodule "lib/cereal"]
-	path = lib/cereal
+	path = thirdparty/cereal
 	url = https://github.com/USCiLab/cereal.git
 [submodule "lib/annoy"]
-	path = lib/annoy
+	path = thirdparty/annoy
 	url = https://github.com/FuexFollets/annoy.git
 	branch = serialization
