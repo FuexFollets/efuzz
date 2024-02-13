@@ -1,6 +1,3 @@
-[submodule "lib/eigen"]
-	path = thirdparty/eigen
-	url = https://github.com/libigl/eigen.git
 [submodule "lib/cereal"]
 	path = thirdparty/cereal
 	url = https://github.com/USCiLab/cereal.git
@@ -11,3 +8,6 @@
 [submodule "Constants"]
 	path = Constants
 	url = https://github.com/FuexFollets/Constants.git
+[submodule "thirdparty/eigen"]
+	path = thirdparty/eigen
+	url = https://gitlab.com/libeigen/eigen.git
