@@ -5,7 +5,7 @@
 
 #include <efuzz/neural_network/neural_network.hpp>
 
-namespace lc {
+namespace efuzz {
     // Give each random float values between -1 and 1.
     NeuralNetwork::NeuralNetworkDiff::NeuralNetworkDiff(
         const std::vector<std::size_t>& layer_sizes) :
@@ -100,7 +100,7 @@ namespace lc {
 
 // Print neural network diff
 
-std::ostream& operator<<(std::ostream& stream, const lc::NeuralNetwork::NeuralNetworkDiff& diff) {
+std::ostream& operator<<(std::ostream& stream, const efuzz::NeuralNetwork::NeuralNetworkDiff& diff) {
     stream << "diff:\n";
     stream << "  layer_sizes: ";
 

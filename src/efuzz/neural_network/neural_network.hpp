@@ -12,7 +12,7 @@
 
 #include <efuzz/cereal_eigen.hpp>
 
-namespace lc {
+namespace efuzz {
     using vbuffer_t = std::vector<std::uint8_t>;
 
     class NeuralNetwork {
@@ -97,9 +97,9 @@ namespace lc {
         static NeuralNetwork load_file(const std::filesystem::path& filepath);
         static float sigmoid_abs(float value);
     };
-} // namespace lc
+} // namespace efuzz
 
-std::ostream& operator<<(std::ostream& stream, const lc::NeuralNetwork& network);
-std::ostream& operator<<(std::ostream& stream, const lc::NeuralNetwork::NeuralNetworkDiff& diff);
+std::ostream& operator<<(std::ostream& stream, const efuzz::NeuralNetwork& network);
+std::ostream& operator<<(std::ostream& stream, const efuzz::NeuralNetwork::NeuralNetworkDiff& diff);
 
 #endif // LEXOCRAFT_NEURAL_NETWORK_HPP

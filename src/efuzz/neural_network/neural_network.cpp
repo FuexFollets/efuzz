@@ -7,7 +7,7 @@
 
 #include <efuzz/neural_network/neural_network.hpp>
 
-namespace lc {
+namespace efuzz {
     NeuralNetwork::NeuralNetwork(std::vector<std::size_t> layer_sizes, bool randomize) :
         layer_sizes(layer_sizes), most_recent_diff(layer_sizes) {
         for (std::size_t index {1}; index < layer_sizes.size(); ++index) {
@@ -127,7 +127,7 @@ namespace lc {
     }
 } // namespace lc
 
-std::ostream& operator<<(std::ostream& stream, const lc::NeuralNetwork& network) {
+std::ostream& operator<<(std::ostream& stream, const efuzz::NeuralNetwork& network) {
     stream << "NeuralNetwork:\n";
     stream << "  layer_sizes: ";
 
