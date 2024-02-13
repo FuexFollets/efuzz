@@ -77,6 +77,19 @@ namespace efuzz {
     template <typename StringT, int encoding_result_size>
     requires requires { typename StringT::value_type; }
 
+    auto Encoder<StringT, encoding_result_size>::set_encoding_nn_layer_sizes(
+        const std::vector<std::size_t>& layer_sizes, bool random) -> this_type& {
+        assert(layer_sizes.front() == get_nn_input_size());
+        assert(layer_sizes.back() == get_nn_output_size());
+
+        _word_vector_encoder_nn = NeuralNetwork(layer_sizes, random);
+
+        return *this;
+    }
+
+    template <typename StringT, int encoding_result_size>
+    requires requires { typename StringT::value_type; }
+
     auto Encoder<StringT, encoding_result_size>::get_nn_input_size() const -> std::size_t {
         if constexpr (encoding_result_size_is_dynamic::value) {
             return char_encoder_size::value + encoding_result_size;
