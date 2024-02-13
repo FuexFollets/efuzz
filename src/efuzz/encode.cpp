@@ -73,4 +73,30 @@ namespace efuzz {
         -> NeuralNetwork {
         return _word_vector_encoder_nn;
     }
+
+    template <typename StringT, int encoding_result_size>
+    requires requires { typename StringT::value_type; }
+
+    auto Encoder<StringT, encoding_result_size>::get_nn_input_size() const -> std::size_t {
+        if constexpr (encoding_result_size_is_dynamic::value) {
+            return char_encoder_size::value + encoding_result_size;
+        }
+
+        assert(_encoding_result_size.has_value());
+
+        return char_encoder_size::value + _encoding_result_size;
+    }
+
+    template <typename StringT, int encoding_result_size>
+    requires requires { typename StringT::value_type; }
+
+    auto Encoder<StringT, encoding_result_size>::get_nn_output_size() const -> std::size_t {
+        if constexpr (encoding_result_size_is_dynamic::value) {
+            return encoding_result_size;
+        }
+
+        assert(_encoding_result_size.has_value());
+
+        return _encoding_result_size.value();
+    }
 } // namespace efuzz

@@ -3,6 +3,7 @@
 
 #include <cstddef>
 #include <functional>
+#include <optional>
 #include <type_traits>
 
 #include <cereal/cereal.hpp>
@@ -46,6 +47,9 @@ namespace efuzz {
         this_type& set_word_vector_encoder_nn(const NeuralNetwork& neural_network);
         [[nodiscard]] NeuralNetwork get_word_vector_encoder_nn() const;
 
+        [[nodiscard]] std::size_t get_nn_input_size() const;
+        [[nodiscard]] std::size_t get_nn_output_size() const;
+
         private:
 
         using neural_network_input_size = std::conditional_t<
@@ -62,6 +66,7 @@ namespace efuzz {
 
         NeuralNetwork _word_vector_encoder_nn; // Recurrent Neural Network (RNN)
         encoding_result_type _encoding_result;
+        std::optional<std::size_t> _encoding_result_size;
     };
 
     template class Encoder<std::string>;
