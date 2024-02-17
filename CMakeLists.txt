@@ -8,6 +8,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 20)
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/annoy)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/rapidfuzz-cpp)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/src/efuzz)
 
 set(public_headers
