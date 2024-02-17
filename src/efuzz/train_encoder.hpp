@@ -54,6 +54,51 @@ namespace efuzz {
         EncoderT _encoder;
         std::optional<DatasetT> _dataset;
     };
+
+    template <typename EncoderT>
+    TrainEncoder<EncoderT>::TrainEncoder(EncoderT encoder) : _encoder(encoder) {
+    }
+
+    template <typename EncoderT>
+    TrainEncoder<EncoderT>::TrainEncoder(EncoderT encoder, DatasetT dataset) :
+        _encoder(encoder), _dataset(dataset) {
+    }
+
+    template <typename EncoderT>
+    void TrainEncoder<EncoderT>::set_dataset(DatasetT dataset) {
+        _dataset = dataset;
+    }
+
+    template <typename EncoderT>
+    void TrainEncoder<EncoderT>::add_to_dataset(
+        const typename TrainEncoder<EncoderT>::StringT& string) {
+        if (!_dataset) {
+            _dataset = std::make_shared<std::vector<StringT>>();
+        }
+        _dataset->push_back(string);
+    }
+
+    template <typename EncoderT>
+    void TrainEncoder<EncoderT>::add_to_dataset(const std::vector<StringT>& strings) {
+        if (!_dataset) {
+            _dataset = std::make_shared<std::vector<StringT>>();
+        }
+        _dataset->insert(_dataset->end(), strings.begin(), strings.end());
+    }
+
+    template <typename EncoderT>
+    EncoderT TrainEncoder<EncoderT>::get_encoder() const {
+        return _encoder;
+    }
+
+    template <typename EncoderT>
+    typename TrainEncoder<EncoderT>::DatasetT TrainEncoder<EncoderT>::get_dataset() const {
+        if (!_dataset) {
+            _dataset = std::make_shared<std::vector<StringT>>();
+        }
+
+        return _dataset;
+    }
 } // namespace efuzz
 
 #endif // EFUZZ_TRAIN_ENCODER_HPP
