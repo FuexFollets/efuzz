@@ -11,7 +11,7 @@ int main() {
 
     std::vector<std::size_t> layer_sizes = {input_size, 10, 10, output_size};
 
-    static_cast<void>(encoder.set_encoding_nn_layer_sizes(layer_sizes));
+    encoder.set_encoding_nn_layer_sizes(layer_sizes);
 
     auto res = encoder.encode("airplane");
 

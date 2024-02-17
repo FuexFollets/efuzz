@@ -51,9 +51,8 @@ namespace efuzz {
 
         this_type& set_word_vector_encoder_nn(const NeuralNetwork& neural_network);
         [[nodiscard]] NeuralNetwork get_word_vector_encoder_nn() const;
-        [[nodiscard]] this_type&
-            set_encoding_nn_layer_sizes(const std::vector<std::size_t>& layer_sizes,
-                                        bool random = true);
+        this_type& set_encoding_nn_layer_sizes(const std::vector<std::size_t>& layer_sizes,
+                                               bool random = true);
 
         [[nodiscard]] std::size_t get_nn_input_size() const;
         [[nodiscard]] std::size_t get_nn_output_size() const;
