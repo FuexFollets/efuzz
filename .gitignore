@@ -44,6 +44,7 @@ compile_commands.json
 CTestTestfile.cmake
 _deps
 include
+bin
 
 ### CMake Patch ###
 # External projects
