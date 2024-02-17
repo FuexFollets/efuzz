@@ -15,6 +15,6 @@ target_link_libraries(efuzz
 target_include_directories(efuzz
     PUBLIC
         "${PROJECT_SOURCE_DIR}/src"
-        "${CMAKE_PROJECT_SOURCE_DIR}/thirdparty/eigen"
-        "${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/rapidfuzz-cpp"
+        "${PROJECT_SOURCE_DIR}/thirdparty/eigen"
+        "${PROJECT_SOURCE_DIR}/thirdparty/rapidfuzz-cpp"
 )
