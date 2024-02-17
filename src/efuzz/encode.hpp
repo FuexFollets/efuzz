@@ -1,6 +1,7 @@
 #ifndef EFUZZ_ENCODE_HPP
 #define EFUZZ_ENCODE_HPP
 
+#include <cmath>
 #include <cstddef>
 #include <functional>
 #include <optional>
@@ -56,6 +57,10 @@ namespace efuzz {
 
         [[nodiscard]] std::size_t get_nn_input_size() const;
         [[nodiscard]] std::size_t get_nn_output_size() const;
+        [[nodiscard]] constexpr float output_norm_max() const
+            requires encoding_result_size_is_dynamic::value;
+        [[nodiscard]] float output_norm_max() const
+            requires(!encoding_result_size_is_dynamic::value);
 
         private:
 
@@ -75,9 +80,7 @@ namespace efuzz {
         encoding_result_type _encoding_result;
         std::optional<std::size_t> _encoding_result_size;
     };
-} // namespace efuzz
 
-namespace efuzz {
     template <typename StringT, int encoding_result_size>
     requires requires { typename StringT::value_type; }
 
@@ -187,6 +190,24 @@ namespace efuzz {
         assert(_encoding_result_size.has_value());
 
         return _encoding_result_size.value();
+    }
+
+    template <typename StringT, int encoding_result_size>
+    requires requires { typename StringT::value_type; }
+
+    constexpr auto Encoder<StringT, encoding_result_size>::output_norm_max() const -> float
+        requires encoding_result_size_is_dynamic::value {
+        return std::sqrt(static_cast<float>(encoding_result_size));
+    }
+
+    template <typename StringT, int encoding_result_size>
+    requires requires { typename StringT::value_type; }
+
+    auto Encoder<StringT, encoding_result_size>::output_norm_max() const -> float
+        requires(!encoding_result_size_is_dynamic::value) {
+        assert(_encoding_result_size.has_value());
+
+        return std::sqrt(static_cast<float>(_encoding_result_size.value()));
     }
 } // namespace efuzz
 
