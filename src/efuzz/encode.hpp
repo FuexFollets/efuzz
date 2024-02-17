@@ -15,12 +15,13 @@
 #include <efuzz/neural_network/neural_network.hpp>
 
 namespace efuzz {
-    template <typename StringT, int encoding_result_size = -1>
-    requires requires { typename StringT::value_type; }
+    template <typename StringT_, int encoding_result_size = -1>
+    requires requires { typename StringT_::value_type; }
 
     class Encoder {
         public:
 
+        using StringT = StringT_;
         using char_type = typename StringT::value_type;
         using this_type = Encoder<StringT, encoding_result_size>;
         using char_encoder_size = std::integral_constant<std::size_t, sizeof(char_type) * 8>;
@@ -81,10 +82,10 @@ namespace efuzz {
         std::optional<std::size_t> _encoding_result_size;
     };
 
-    template <typename StringT, int encoding_result_size>
-    requires requires { typename StringT::value_type; }
+    template <typename StringT_, int encoding_result_size>
+    requires requires { typename StringT_::value_type; }
 
-    auto Encoder<StringT, encoding_result_size>::encode(const StringT& word)
+    auto Encoder<StringT_, encoding_result_size>::encode(const StringT& word)
         -> encoding_result_type {
         reset_encoding_result();
 
@@ -95,10 +96,10 @@ namespace efuzz {
         return _encoding_result;
     }
 
-    template <typename StringT, int encoding_result_size>
-    requires requires { typename StringT::value_type; }
+    template <typename StringT_, int encoding_result_size>
+    requires requires { typename StringT_::value_type; }
 
-    auto Encoder<StringT, encoding_result_size>::encode_letter(const char_type& letter)
+    auto Encoder<StringT_, encoding_result_size>::encode_letter(const char_type& letter)
         -> this_type& {
         Eigen::Vector<float, char_encoder_size::value> letter_binary_encoding;
 
@@ -118,45 +119,45 @@ namespace efuzz {
         return *this;
     }
 
-    template <typename StringT, int encoding_result_size>
-    requires requires { typename StringT::value_type; }
+    template <typename StringT_, int encoding_result_size>
+    requires requires { typename StringT_::value_type; }
 
-    auto Encoder<StringT, encoding_result_size>::reset_encoding_result() -> this_type& {
+    auto Encoder<StringT_, encoding_result_size>::reset_encoding_result() -> this_type& {
         _encoding_result.setZero();
 
         return *this;
     }
 
-    template <typename StringT, int encoding_result_size>
-    requires requires { typename StringT::value_type; }
+    template <typename StringT_, int encoding_result_size>
+    requires requires { typename StringT_::value_type; }
 
-    auto Encoder<StringT, encoding_result_size>::get_encoding_result() const
+    auto Encoder<StringT_, encoding_result_size>::get_encoding_result() const
         -> encoding_result_type {
         return _encoding_result;
     }
 
-    template <typename StringT, int encoding_result_size>
-    requires requires { typename StringT::value_type; }
+    template <typename StringT_, int encoding_result_size>
+    requires requires { typename StringT_::value_type; }
 
-    auto Encoder<StringT, encoding_result_size>::set_word_vector_encoder_nn(
+    auto Encoder<StringT_, encoding_result_size>::set_word_vector_encoder_nn(
         const NeuralNetwork& neural_network) -> this_type& {
         _word_vector_encoder_nn = neural_network;
 
         return *this;
     }
 
-    template <typename StringT, int encoding_result_size>
-    requires requires { typename StringT::value_type; }
+    template <typename StringT_, int encoding_result_size>
+    requires requires { typename StringT_::value_type; }
 
-    auto Encoder<StringT, encoding_result_size>::get_word_vector_encoder_nn() const
+    auto Encoder<StringT_, encoding_result_size>::get_word_vector_encoder_nn() const
         -> NeuralNetwork {
         return _word_vector_encoder_nn;
     }
 
-    template <typename StringT, int encoding_result_size>
-    requires requires { typename StringT::value_type; }
+    template <typename StringT_, int encoding_result_size>
+    requires requires { typename StringT_::value_type; }
 
-    auto Encoder<StringT, encoding_result_size>::set_encoding_nn_layer_sizes(
+    auto Encoder<StringT_, encoding_result_size>::set_encoding_nn_layer_sizes(
         const std::vector<std::size_t>& layer_sizes, bool random) -> this_type& {
         assert(layer_sizes.front() == get_nn_input_size());
         assert(layer_sizes.back() == get_nn_output_size());
@@ -166,10 +167,10 @@ namespace efuzz {
         return *this;
     }
 
-    template <typename StringT, int encoding_result_size>
-    requires requires { typename StringT::value_type; }
+    template <typename StringT_, int encoding_result_size>
+    requires requires { typename StringT_::value_type; }
 
-    auto Encoder<StringT, encoding_result_size>::get_nn_input_size() const -> std::size_t {
+    auto Encoder<StringT_, encoding_result_size>::get_nn_input_size() const -> std::size_t {
         if constexpr (encoding_result_size_is_dynamic::value) {
             return char_encoder_size::value + encoding_result_size;
         }
@@ -179,10 +180,10 @@ namespace efuzz {
         return char_encoder_size::value + _encoding_result_size.value();
     }
 
-    template <typename StringT, int encoding_result_size>
-    requires requires { typename StringT::value_type; }
+    template <typename StringT_, int encoding_result_size>
+    requires requires { typename StringT_::value_type; }
 
-    auto Encoder<StringT, encoding_result_size>::get_nn_output_size() const -> std::size_t {
+    auto Encoder<StringT_, encoding_result_size>::get_nn_output_size() const -> std::size_t {
         if constexpr (encoding_result_size_is_dynamic::value) {
             return encoding_result_size;
         }
@@ -192,18 +193,18 @@ namespace efuzz {
         return _encoding_result_size.value();
     }
 
-    template <typename StringT, int encoding_result_size>
-    requires requires { typename StringT::value_type; }
+    template <typename StringT_, int encoding_result_size>
+    requires requires { typename StringT_::value_type; }
 
-    constexpr auto Encoder<StringT, encoding_result_size>::output_norm_max() const -> float
+    constexpr auto Encoder<StringT_, encoding_result_size>::output_norm_max() const -> float
         requires encoding_result_size_is_dynamic::value {
         return std::sqrt(static_cast<float>(encoding_result_size));
     }
 
-    template <typename StringT, int encoding_result_size>
-    requires requires { typename StringT::value_type; }
+    template <typename StringT_, int encoding_result_size>
+    requires requires { typename StringT_::value_type; }
 
-    auto Encoder<StringT, encoding_result_size>::output_norm_max() const -> float
+    auto Encoder<StringT_, encoding_result_size>::output_norm_max() const -> float
         requires(!encoding_result_size_is_dynamic::value) {
         assert(_encoding_result_size.has_value());
 
