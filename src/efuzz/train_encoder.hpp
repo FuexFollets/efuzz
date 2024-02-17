@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <memory>
 #include <optional>
+#include <type_traits>
 #include <vector>
 
 #include <cereal/cereal.hpp>
@@ -15,9 +16,15 @@
 #include <efuzz/encode.hpp>
 #include <efuzz/neural_network/neural_network.hpp>
 
+template <template <typename...> class Template, typename T>
+struct is_instantiation_of : std::false_type {};
+
+template <template <typename...> class Template, typename... Args>
+struct is_instantiation_of<Template, Template<Args...>> : std::true_type {};
+
 namespace efuzz {
     template <typename EncoderT>
-    class TrainEncoder {
+    requires is_instantiation_of<Encoder, EncoderT>::value class TrainEncoder {
         public:
 
         using this_type = TrainEncoder<EncoderT>;
@@ -44,6 +51,7 @@ namespace efuzz {
         EncoderT get_encoder() const;
         DatasetT get_dataset() const;
 
+        [[nodiscard]] float cost(const StringT& string_1, const StringT& string_2) const;
         NeuralNetwork::NeuralNetworkDiff train_random(std::size_t iterations);
         NeuralNetwork::NeuralNetworkDiff train_all(std::size_t iterations);
 
@@ -56,20 +64,24 @@ namespace efuzz {
     };
 
     template <typename EncoderT>
+    requires is_instantiation_of<Encoder, EncoderT>::value
     TrainEncoder<EncoderT>::TrainEncoder(EncoderT encoder) : _encoder(encoder) {
     }
 
     template <typename EncoderT>
+    requires is_instantiation_of<Encoder, EncoderT>::value
     TrainEncoder<EncoderT>::TrainEncoder(EncoderT encoder, DatasetT dataset) :
         _encoder(encoder), _dataset(dataset) {
     }
 
     template <typename EncoderT>
+    requires is_instantiation_of<Encoder, EncoderT>::value
     void TrainEncoder<EncoderT>::set_dataset(DatasetT dataset) {
         _dataset = dataset;
     }
 
     template <typename EncoderT>
+    requires is_instantiation_of<Encoder, EncoderT>::value
     void TrainEncoder<EncoderT>::add_to_dataset(
         const typename TrainEncoder<EncoderT>::StringT& string) {
         if (!_dataset) {
@@ -79,6 +91,7 @@ namespace efuzz {
     }
 
     template <typename EncoderT>
+    requires is_instantiation_of<Encoder, EncoderT>::value
     void TrainEncoder<EncoderT>::add_to_dataset(const std::vector<StringT>& strings) {
         if (!_dataset) {
             _dataset = std::make_shared<std::vector<StringT>>();
@@ -87,17 +100,24 @@ namespace efuzz {
     }
 
     template <typename EncoderT>
+    requires is_instantiation_of<Encoder, EncoderT>::value
     EncoderT TrainEncoder<EncoderT>::get_encoder() const {
         return _encoder;
     }
 
     template <typename EncoderT>
+    requires is_instantiation_of<Encoder, EncoderT>::value
     typename TrainEncoder<EncoderT>::DatasetT TrainEncoder<EncoderT>::get_dataset() const {
         if (!_dataset) {
             _dataset = std::make_shared<std::vector<StringT>>();
         }
 
         return _dataset;
+    }
+
+    template <typename EncoderT>
+    requires is_instantiation_of<Encoder, EncoderT>::value
+    float TrainEncoder<EncoderT>::cost(const StringT& string_1, const StringT& string_2) const {
     }
 } // namespace efuzz
 
