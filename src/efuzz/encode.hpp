@@ -28,6 +28,10 @@ namespace efuzz {
         using encoding_result_type =
             std::conditional_t<encoding_result_size_is_dynamic::value,
                                Eigen::Vector<float, encoding_result_size>, Eigen::VectorXf>;
+        using neural_network_input_type = std::conditional_t<
+            encoding_result_size_is_dynamic::value,
+            Eigen::Vector<float, char_encoder_size::value + encoding_result_size>, Eigen::VectorXf>;
+        using neural_network_output_type = encoding_result_type;
 
         Encoder() = default;
         Encoder(const Encoder&) = default;
@@ -43,12 +47,13 @@ namespace efuzz {
         encoding_result_type encode(const StringT& word);
         this_type& encode_letter(const char_type& letter);
         this_type& reset_encoding_result();
-        [[nodiscard]] encoding_result_type& get_encoding_result() const;
+        [[nodiscard]] encoding_result_type get_encoding_result() const;
 
         this_type& set_word_vector_encoder_nn(const NeuralNetwork& neural_network);
         [[nodiscard]] NeuralNetwork get_word_vector_encoder_nn() const;
         [[nodiscard]] this_type&
-            set_encoding_nn_layer_sizes(const std::vector<std::size_t>& layer_sizes, bool random=true);
+            set_encoding_nn_layer_sizes(const std::vector<std::size_t>& layer_sizes,
+                                        bool random = true);
 
         [[nodiscard]] std::size_t get_nn_input_size() const;
         [[nodiscard]] std::size_t get_nn_output_size() const;
@@ -71,12 +76,119 @@ namespace efuzz {
         encoding_result_type _encoding_result;
         std::optional<std::size_t> _encoding_result_size;
     };
+} // namespace efuzz
 
-    template class Encoder<std::string>;
-    template class Encoder<std::wstring>;
-    template class Encoder<std::u8string>;
-    template class Encoder<std::u16string>;
-    template class Encoder<std::u32string>;
+namespace efuzz {
+    template <typename StringT, int encoding_result_size>
+    requires requires { typename StringT::value_type; }
+
+    auto Encoder<StringT, encoding_result_size>::encode(const StringT& word)
+        -> encoding_result_type {
+        reset_encoding_result();
+
+        for (const auto& letter: word) {
+            encode_letter(letter);
+        }
+
+        return _encoding_result;
+    }
+
+    template <typename StringT, int encoding_result_size>
+    requires requires { typename StringT::value_type; }
+
+    auto Encoder<StringT, encoding_result_size>::encode_letter(const char_type& letter)
+        -> this_type& {
+        Eigen::Vector<float, char_encoder_size::value> letter_binary_encoding;
+
+        char_type mask = 1;
+
+        for (std::size_t i = 0; i < char_encoder_size::value; ++i) {
+            letter_binary_encoding(i) = (letter & mask) ? 1.0F : 0.0F;
+            mask <<= 1;
+        }
+
+        neural_network_input_type input;
+
+        input << letter_binary_encoding, _encoding_result;
+
+        _encoding_result = _word_vector_encoder_nn.compute(input);
+
+        return *this;
+    }
+
+    template <typename StringT, int encoding_result_size>
+    requires requires { typename StringT::value_type; }
+
+    auto Encoder<StringT, encoding_result_size>::reset_encoding_result() -> this_type& {
+        _encoding_result.setZero();
+
+        return *this;
+    }
+
+    template <typename StringT, int encoding_result_size>
+    requires requires { typename StringT::value_type; }
+
+    auto Encoder<StringT, encoding_result_size>::get_encoding_result() const
+        -> encoding_result_type {
+        return _encoding_result;
+    }
+
+    template <typename StringT, int encoding_result_size>
+    requires requires { typename StringT::value_type; }
+
+    auto Encoder<StringT, encoding_result_size>::set_word_vector_encoder_nn(
+        const NeuralNetwork& neural_network) -> this_type& {
+        _word_vector_encoder_nn = neural_network;
+
+        return *this;
+    }
+
+    template <typename StringT, int encoding_result_size>
+    requires requires { typename StringT::value_type; }
+
+    auto Encoder<StringT, encoding_result_size>::get_word_vector_encoder_nn() const
+        -> NeuralNetwork {
+        return _word_vector_encoder_nn;
+    }
+
+    template <typename StringT, int encoding_result_size>
+    requires requires { typename StringT::value_type; }
+
+    auto Encoder<StringT, encoding_result_size>::set_encoding_nn_layer_sizes(
+        const std::vector<std::size_t>& layer_sizes, bool random) -> this_type& {
+        assert(layer_sizes.front() == get_nn_input_size());
+        assert(layer_sizes.back() == get_nn_output_size());
+
+        _word_vector_encoder_nn = NeuralNetwork(layer_sizes, random);
+
+        return *this;
+    }
+
+    template <typename StringT, int encoding_result_size>
+    requires requires { typename StringT::value_type; }
+
+    auto Encoder<StringT, encoding_result_size>::get_nn_input_size() const -> std::size_t {
+        if constexpr (encoding_result_size_is_dynamic::value) {
+            return char_encoder_size::value + encoding_result_size;
+        }
+
+        assert(_encoding_result_size.has_value());
+
+        return char_encoder_size::value + _encoding_result_size.value();
+    }
+
+    template <typename StringT, int encoding_result_size>
+    requires requires { typename StringT::value_type; }
+
+    auto Encoder<StringT, encoding_result_size>::get_nn_output_size() const -> std::size_t {
+        if constexpr (encoding_result_size_is_dynamic::value) {
+            return encoding_result_size;
+        }
+
+        assert(_encoding_result_size.has_value());
+
+        return _encoding_result_size.value();
+    }
 } // namespace efuzz
 
 #endif // EFUZZ_ENCODE_HPP
