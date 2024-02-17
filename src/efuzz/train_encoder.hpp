@@ -118,6 +118,17 @@ namespace efuzz {
     template <typename EncoderT>
     requires is_instantiation_of<Encoder, EncoderT>::value
     float TrainEncoder<EncoderT>::cost(const StringT& string_1, const StringT& string_2) const {
+        const auto encoded_1 = _encoder.encode(string_1);
+        const auto encoded_2 = _encoder.encode(string_2);
+        const float max_normalized_difference = _encoder.output_norm_max();
+        const float encoded_normalized_difference =
+            (encoded_1 - encoded_2).norm() / max_normalized_difference;
+
+        constexpr float max_rapidfuzz_difference = 100.0F;
+        const float rapidfuzz_difference =
+            rapidfuzz::fuzz::ratio(string_1, string_2) / max_rapidfuzz_difference;
+
+        return std::abs(encoded_normalized_difference - rapidfuzz_difference);
     }
 } // namespace efuzz
 
