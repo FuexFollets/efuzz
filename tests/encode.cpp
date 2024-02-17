@@ -2,9 +2,10 @@
 #include <string>
 
 #include <efuzz/encode.hpp>
+#include <type_traits>
 
 int main() {
-    efuzz::Encoder<std::string, 10> encoder;
+    efuzz::Encoder<std::string, std::integral_constant<int, 10>> encoder;
 
     const std::size_t input_size = encoder.get_nn_input_size();
     const std::size_t output_size = encoder.get_nn_output_size();
