@@ -2,6 +2,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 set(TEST_FILES
     encode
+    train_encoder
 )
 
 if(COMPILE_TESTS)
