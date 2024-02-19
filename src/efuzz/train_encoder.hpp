@@ -16,22 +16,22 @@
 namespace efuzz {
     template <StdString StringT_,
               IntegralConstant encoding_result_size_ = std::integral_constant<int, -1>>
-    class TrainEncoder {
+    class EncoderTrainer {
         public:
 
-        using this_type = TrainEncoder<StringT_, encoding_result_size_>;
+        using this_type = EncoderTrainer<StringT_, encoding_result_size_>;
         using StringT = StringT_;
         using DatasetT = std::shared_ptr<std::vector<StringT>>;
         using EncoderT = Encoder<StringT, encoding_result_size_>;
 
-        TrainEncoder() = default;
-        TrainEncoder(const TrainEncoder&) = default;
-        TrainEncoder(TrainEncoder&&) = default;
-        TrainEncoder& operator=(const TrainEncoder&) = default;
-        TrainEncoder& operator=(TrainEncoder&&) = default;
+        EncoderTrainer() = default;
+        EncoderTrainer(const EncoderTrainer&) = default;
+        EncoderTrainer(EncoderTrainer&&) = default;
+        EncoderTrainer& operator=(const EncoderTrainer&) = default;
+        EncoderTrainer& operator=(EncoderTrainer&&) = default;
 
-        explicit TrainEncoder(EncoderT encoder);
-        explicit TrainEncoder(EncoderT encoder, DatasetT dataset);
+        explicit EncoderTrainer(EncoderT encoder);
+        explicit EncoderTrainer(EncoderT encoder, DatasetT dataset);
 
         template <typename Archive>
         void serialize(Archive& archive) {
@@ -71,24 +71,24 @@ namespace efuzz {
     };
 
     template <StdString StringT_, IntegralConstant encoding_result_size_>
-    TrainEncoder<StringT_, encoding_result_size_>::TrainEncoder(EncoderT encoder) :
+    EncoderTrainer<StringT_, encoding_result_size_>::EncoderTrainer(EncoderT encoder) :
         _encoder(encoder) {
     }
 
     template <StdString StringT_, IntegralConstant encoding_result_size_>
-    TrainEncoder<StringT_, encoding_result_size_>::TrainEncoder(EncoderT encoder,
+    EncoderTrainer<StringT_, encoding_result_size_>::EncoderTrainer(EncoderT encoder,
                                                                 DatasetT dataset) :
         _encoder(encoder),
         _dataset(dataset) {
     }
 
     template <StdString StringT_, IntegralConstant encoding_result_size_>
-    void TrainEncoder<StringT_, encoding_result_size_>::set_dataset(DatasetT dataset) {
+    void EncoderTrainer<StringT_, encoding_result_size_>::set_dataset(DatasetT dataset) {
         _dataset = dataset;
     }
 
     template <StdString StringT_, IntegralConstant encoding_result_size_>
-    void TrainEncoder<StringT_, encoding_result_size_>::add_to_dataset(const StringT& string) {
+    void EncoderTrainer<StringT_, encoding_result_size_>::add_to_dataset(const StringT& string) {
         if (!_dataset) {
             _dataset = std::make_shared<std::vector<StringT>>();
         }
@@ -96,7 +96,7 @@ namespace efuzz {
     }
 
     template <StdString StringT_, IntegralConstant encoding_result_size_>
-    void TrainEncoder<StringT_, encoding_result_size_>::add_to_dataset(
+    void EncoderTrainer<StringT_, encoding_result_size_>::add_to_dataset(
         const std::vector<StringT>& strings) {
         if (!_dataset) {
             _dataset = std::make_shared<std::vector<StringT>>();
@@ -106,13 +106,13 @@ namespace efuzz {
 
     template <StdString StringT_, IntegralConstant encoding_result_size_>
     Encoder<StringT_, encoding_result_size_>
-        TrainEncoder<StringT_, encoding_result_size_>::get_encoder() const {
+        EncoderTrainer<StringT_, encoding_result_size_>::get_encoder() const {
         return _encoder;
     }
 
     template <StdString StringT_, IntegralConstant encoding_result_size_>
-    typename TrainEncoder<StringT_, encoding_result_size_>::DatasetT
-        TrainEncoder<StringT_, encoding_result_size_>::get_dataset() const {
+    typename EncoderTrainer<StringT_, encoding_result_size_>::DatasetT
+        EncoderTrainer<StringT_, encoding_result_size_>::get_dataset() const {
         if (!_dataset) {
             _dataset = std::make_shared<std::vector<StringT>>();
         }
@@ -121,7 +121,7 @@ namespace efuzz {
     }
 
     template <StdString StringT_, IntegralConstant encoding_result_size_>
-    float TrainEncoder<StringT_, encoding_result_size_>::cost(const StringT& string_1,
+    float EncoderTrainer<StringT_, encoding_result_size_>::cost(const StringT& string_1,
                                                               const StringT& string_2) const {
         const auto encoded_1 = _encoder.encode(string_1);
         const auto encoded_2 = _encoder.encode(string_2);
@@ -137,8 +137,8 @@ namespace efuzz {
     }
 
     template <StdString StringT_, IntegralConstant encoding_result_size_>
-    typename TrainEncoder<StringT_, encoding_result_size_>::TrainingResult
-        TrainEncoder<StringT_, encoding_result_size_>::train(const StringT& string_1,
+    typename EncoderTrainer<StringT_, encoding_result_size_>::TrainingResult
+        EncoderTrainer<StringT_, encoding_result_size_>::train(const StringT& string_1,
                                                              const StringT& string_2) {
         const NeuralNetwork original_encoder_nn = _encoder.get_word_vector_encoder_nn();
         const float original_cost = cost(string_1, string_2);
@@ -160,8 +160,8 @@ namespace efuzz {
     }
 
     template <StdString StringT_, IntegralConstant encoding_result_size_>
-    typename TrainEncoder<StringT_, encoding_result_size_>::TrainingResult
-        TrainEncoder<StringT_, encoding_result_size_>::train(
+    typename EncoderTrainer<StringT_, encoding_result_size_>::TrainingResult
+        EncoderTrainer<StringT_, encoding_result_size_>::train(
             const std::vector<std::pair<StringT, StringT>>& string_pairs) {
         if (string_pairs.empty()) {
             throw std::runtime_error("Empty string pairs provided");
@@ -173,7 +173,7 @@ namespace efuzz {
 
         for (const auto& [string_1, string_2]: string_pairs) {
             const float cost =
-                TrainEncoder<StringT_, encoding_result_size_>::cost(string_1, string_2);
+                EncoderTrainer<StringT_, encoding_result_size_>::cost(string_1, string_2);
 
             average_cost_of_unmodified_encoder += cost;
         }
@@ -188,7 +188,7 @@ namespace efuzz {
 
         for (const auto& [string_1, string_2]: string_pairs) {
             const float cost =
-                TrainEncoder<StringT_, encoding_result_size_>::cost(string_1, string_2);
+                EncoderTrainer<StringT_, encoding_result_size_>::cost(string_1, string_2);
 
             average_cost_of_modified_encoder += cost;
         }
@@ -206,8 +206,8 @@ namespace efuzz {
     }
 
     template <StdString StringT_, IntegralConstant encoding_result_size_>
-    typename TrainEncoder<StringT_, encoding_result_size_>::TrainingResult
-        TrainEncoder<StringT_, encoding_result_size_>::train_random(std::size_t iterations) {
+    typename EncoderTrainer<StringT_, encoding_result_size_>::TrainingResult
+        EncoderTrainer<StringT_, encoding_result_size_>::train_random(std::size_t iterations) {
         if (!_dataset) {
             throw std::runtime_error("No dataset provided");
         }
@@ -237,8 +237,8 @@ namespace efuzz {
     }
 
     template <StdString StringT_, IntegralConstant encoding_result_size_>
-    typename TrainEncoder<StringT_, encoding_result_size_>::TrainingResult
-        TrainEncoder<StringT_, encoding_result_size_>::train_all() {
+    typename EncoderTrainer<StringT_, encoding_result_size_>::TrainingResult
+        EncoderTrainer<StringT_, encoding_result_size_>::train_all() {
         if (!_dataset) {
             throw std::runtime_error("No dataset provided");
         }
@@ -261,7 +261,7 @@ namespace efuzz {
                     continue;
                 }
 
-                const float cost = TrainEncoder<StringT_, encoding_result_size_>::cost(
+                const float cost = EncoderTrainer<StringT_, encoding_result_size_>::cost(
                     (*_dataset.value()) [indexer_1], (*_dataset.value()) [indexer_2]);
 
                 average_cost_of_unmodified_encoder += cost;
@@ -284,7 +284,7 @@ namespace efuzz {
                     continue;
                 }
 
-                const float cost = TrainEncoder<StringT_, encoding_result_size_>::cost(
+                const float cost = EncoderTrainer<StringT_, encoding_result_size_>::cost(
                     (*_dataset.value()) [indexer_1], (*_dataset.value()) [indexer_2]);
 
                 average_cost_of_modified_encoder += cost;

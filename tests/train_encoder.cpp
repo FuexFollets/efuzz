@@ -8,5 +8,5 @@
 int main() {
     efuzz::Encoder<std::string, std::integral_constant<int, 10>> encoder;
 
-    efuzz::TrainEncoder<std::string, std::integral_constant<int, 10>> encoder_trainer(encoder);
+    efuzz::EncoderTrainer<std::string, std::integral_constant<int, 10>> encoder_trainer(encoder);
 }
