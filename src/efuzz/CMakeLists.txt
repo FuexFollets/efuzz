@@ -18,3 +18,8 @@ target_include_directories(efuzz
         "${PROJECT_SOURCE_DIR}/thirdparty/eigen"
         "${PROJECT_SOURCE_DIR}/thirdparty/rapidfuzz-cpp"
 )
+
+target_compile_features(efuzz
+    PUBLIC
+        cxx_std_20
+)
