@@ -45,6 +45,7 @@ CTestTestfile.cmake
 _deps
 include
 bin
+out
 
 ### CMake Patch ###
 # External projects
