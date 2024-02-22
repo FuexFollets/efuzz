@@ -7,6 +7,12 @@ add_library(efuzz
         efuzz.cpp
 )
 
+target_precompile_headers(efuzz
+    PUBLIC
+        "${CMAKE_CURRENT_SOURCE_DIR}/efuzz.hpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/encode.hpp"
+)
+
 target_link_libraries(efuzz
     PUBLIC
         efuzz_neural_network

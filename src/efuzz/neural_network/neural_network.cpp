@@ -125,7 +125,7 @@ namespace efuzz {
 
         return network;
     }
-} // namespace lc
+} // namespace efuzz
 
 std::ostream& operator<<(std::ostream& stream, const efuzz::NeuralNetwork& network) {
     stream << "NeuralNetwork:\n";
