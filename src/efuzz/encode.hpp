@@ -30,7 +30,7 @@ namespace efuzz {
         public:
 
         using StringT = StringT_;
-        static constexpr int encoding_result_size = encoding_result_size_::value;
+        static constexpr std::integral auto encoding_result_size = encoding_result_size_::value;
         using char_type = typename StringT::value_type;
         using this_type = Encoder<StringT, encoding_result_size_>;
         using char_encoder_size = std::integral_constant<std::size_t, sizeof(char_type) * 8>;
