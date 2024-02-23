@@ -19,6 +19,17 @@ namespace efuzz {
     class EncoderTrainer {
         public:
 
+        struct CostLogDatapoint {
+            std::size_t iteration {};
+            float original_cost {};
+            float modified_cost {};
+
+            template <typename Archive>
+            void serialize(Archive& archive) {
+                archive(iteration, original_cost, modified_cost);
+            }
+        };
+
         using this_type = EncoderTrainer<StringT_, encoding_result_size_>;
         using StringT = StringT_;
         using DatasetT = std::shared_ptr<std::vector<StringT>>;
@@ -35,14 +46,18 @@ namespace efuzz {
 
         template <typename Archive>
         void serialize(Archive& archive) {
-            archive(_encoder, _dataset);
+            archive(_encoder, _dataset, _training_iterations, _cost_log);
         }
 
         void set_dataset(DatasetT dataset);
-        void add_to_dataset(const StringT& string);
-        void add_to_dataset(const std::vector<StringT>& strings);
+        void add_to_dataset(const StringT& string, bool reset_training_iterations = false);
+        void add_to_dataset(const std::vector<StringT>& strings,
+                            bool reset_training_iterations = false);
         EncoderT get_encoder() const;
         DatasetT get_dataset() const;
+        [[nodiscard]] std::size_t get_training_iterations() const;
+        [[nodiscard]] std::vector<CostLogDatapoint> get_cost_log() const;
+        this_type& clear_cost_log();
 
         [[nodiscard]] float cost(const StringT& string_1, const StringT& string_2);
 
@@ -69,6 +84,8 @@ namespace efuzz {
 
         EncoderT _encoder;
         std::optional<DatasetT> _dataset;
+        std::size_t _training_iterations {};
+        std::vector<CostLogDatapoint> _cost_log;
     };
 
     template <StdString StringT_, IntegralConstant encoding_result_size_>
@@ -86,23 +103,34 @@ namespace efuzz {
     template <StdString StringT_, IntegralConstant encoding_result_size_>
     void EncoderTrainer<StringT_, encoding_result_size_>::set_dataset(DatasetT dataset) {
         _dataset = dataset;
-    }
-
-    template <StdString StringT_, IntegralConstant encoding_result_size_>
-    void EncoderTrainer<StringT_, encoding_result_size_>::add_to_dataset(const StringT& string) {
-        if (!_dataset) {
-            _dataset = std::make_shared<std::vector<StringT>>();
-        }
-        _dataset->push_back(string);
+        _training_iterations = 0;
     }
 
     template <StdString StringT_, IntegralConstant encoding_result_size_>
     void EncoderTrainer<StringT_, encoding_result_size_>::add_to_dataset(
-        const std::vector<StringT>& strings) {
+        const StringT& string, bool reset_training_iterations) {
         if (!_dataset) {
             _dataset = std::make_shared<std::vector<StringT>>();
         }
+        _dataset->push_back(string);
+
+        if (reset_training_iterations) {
+            _training_iterations = 0;
+        }
+    }
+
+    template <StdString StringT_, IntegralConstant encoding_result_size_>
+    void EncoderTrainer<StringT_, encoding_result_size_>::add_to_dataset(
+        const std::vector<StringT>& strings, bool reset_training_iterations) {
+        if (!_dataset) {
+            _dataset = std::make_shared<std::vector<StringT>>();
+        }
+
         _dataset->insert(_dataset->end(), strings.begin(), strings.end());
+
+        if (reset_training_iterations) {
+            _training_iterations = 0;
+        }
     }
 
     template <StdString StringT_, IntegralConstant encoding_result_size_>
@@ -119,6 +147,24 @@ namespace efuzz {
         }
 
         return _dataset;
+    }
+
+    template <StdString StringT_, IntegralConstant encoding_result_size_>
+    std::size_t EncoderTrainer<StringT_, encoding_result_size_>::get_training_iterations() const {
+        return _training_iterations;
+    }
+
+    template <StdString StringT_, IntegralConstant encoding_result_size_>
+    std::vector<typename EncoderTrainer<StringT_, encoding_result_size_>::CostLogDatapoint>
+        EncoderTrainer<StringT_, encoding_result_size_>::get_cost_log() const {
+        return _cost_log;
+    }
+
+    template <StdString StringT_, IntegralConstant encoding_result_size_>
+    auto EncoderTrainer<StringT_, encoding_result_size_>::clear_cost_log() -> this_type& {
+        _cost_log.clear();
+
+        return *this;
     }
 
     template <StdString StringT_, IntegralConstant encoding_result_size_>
@@ -163,10 +209,11 @@ namespace efuzz {
     template <StdString StringT_, IntegralConstant encoding_result_size_>
     typename EncoderTrainer<StringT_, encoding_result_size_>::TrainingResult
         EncoderTrainer<StringT_, encoding_result_size_>::train(
-            const std::vector<std::pair<StringT, StringT>>& string_pairs) {
+            const std::vector<std::pair<StringT, StringT>>& string_pairs) { // Non-wrapped
         if (string_pairs.empty()) {
             throw std::runtime_error("Empty string pairs provided");
         }
+        _training_iterations++;
 
         const NeuralNetwork original_encoder_nn = _encoder.get_word_vector_encoder_nn();
 
@@ -243,7 +290,7 @@ namespace efuzz {
 
     template <StdString StringT_, IntegralConstant encoding_result_size_>
     typename EncoderTrainer<StringT_, encoding_result_size_>::TrainingResult
-        EncoderTrainer<StringT_, encoding_result_size_>::train_all() {
+        EncoderTrainer<StringT_, encoding_result_size_>::train_all() { // Non-wrapped
         if (!_dataset) {
             throw std::runtime_error("No dataset provided");
         }
@@ -259,6 +306,8 @@ namespace efuzz {
                 "No neural network layer sizes set. Try encoder.set_encoding_nn_layer_sizes() or "
                 "encoder.set_word_vector_encoder_nn()");
         }
+
+        _training_iterations++;
 
         // Dont create string pairs, that takes too much memory
 
