@@ -2,6 +2,8 @@
 #define EFUZZ_TRAIN_ENCODER_HPP
 
 #include <cstddef>
+#include <functional>
+#include <optional>
 #include <random>
 
 #include <cereal/cereal.hpp>
@@ -12,6 +14,7 @@
 
 #include <efuzz/encode.hpp>
 #include <efuzz/neural_network/neural_network.hpp>
+#include <vector>
 
 namespace efuzz {
     template <StdString StringT_,
@@ -34,6 +37,9 @@ namespace efuzz {
         using StringT = StringT_;
         using DatasetT = std::shared_ptr<std::vector<StringT>>;
         using EncoderT = Encoder<StringT, encoding_result_size_>;
+        using DiffScalarFunction =
+            std::function<float(float training_iterations, float encoder_nn_edits,
+                                std::vector<CostLogDatapoint> cost_log)>;
 
         EncoderTrainer() = default;
         EncoderTrainer(const EncoderTrainer&) = default;
@@ -46,7 +52,7 @@ namespace efuzz {
 
         template <typename Archive>
         void serialize(Archive& archive) {
-            archive(_encoder, _dataset, _training_iterations, _cost_log);
+            archive(_encoder, _dataset, _training_iterations, _cost_log, _encoder_nn_edits);
         }
 
         void set_dataset(DatasetT dataset);
@@ -56,6 +62,7 @@ namespace efuzz {
         EncoderT get_encoder() const;
         DatasetT get_dataset() const;
         [[nodiscard]] std::size_t get_training_iterations() const;
+        [[nodiscard]] std::size_t get_encoder_nn_edits_count() const;
         [[nodiscard]] std::vector<CostLogDatapoint> get_cost_log() const;
         this_type& clear_cost_log();
 
@@ -72,10 +79,17 @@ namespace efuzz {
             }
         };
 
-        TrainingResult train(const StringT& string_1, const StringT& string_2);
-        TrainingResult train(const std::vector<std::pair<StringT, StringT>>& string_pairs);
-        TrainingResult train_random(std::size_t iterations);
-        TrainingResult train_all();
+        TrainingResult
+            train(const StringT& string_1, const StringT& string_2,
+                  const std::optional<DiffScalarFunction>& diff_scalar_function = std::nullopt);
+        TrainingResult
+            train(const std::vector<std::pair<StringT, StringT>>& string_pairs,
+                  const std::optional<DiffScalarFunction>& diff_scalar_function = std::nullopt);
+        TrainingResult train_random(
+            std::size_t iterations,
+            const std::optional<DiffScalarFunction>& diff_scalar_function = std::nullopt);
+        TrainingResult
+            train_all(const std::optional<DiffScalarFunction>& diff_scalar_function = std::nullopt);
 
         this_type& modify_encoder(const NeuralNetwork::NeuralNetworkDiff& diff);
         bool apply_training_result(const TrainingResult& training_result);
@@ -85,6 +99,7 @@ namespace efuzz {
         EncoderT _encoder;
         std::optional<DatasetT> _dataset;
         std::size_t _training_iterations {};
+        std::size_t _encoder_nn_edits {};
         std::vector<CostLogDatapoint> _cost_log;
     };
 
@@ -155,6 +170,12 @@ namespace efuzz {
     }
 
     template <StdString StringT_, IntegralConstant encoding_result_size_>
+    std::size_t
+        EncoderTrainer<StringT_, encoding_result_size_>::get_encoder_nn_edits_count() const {
+        return _encoder_nn_edits;
+    }
+
+    template <StdString StringT_, IntegralConstant encoding_result_size_>
     std::vector<typename EncoderTrainer<StringT_, encoding_result_size_>::CostLogDatapoint>
         EncoderTrainer<StringT_, encoding_result_size_>::get_cost_log() const {
         return _cost_log;
@@ -185,12 +206,18 @@ namespace efuzz {
 
     template <StdString StringT_, IntegralConstant encoding_result_size_>
     typename EncoderTrainer<StringT_, encoding_result_size_>::TrainingResult
-        EncoderTrainer<StringT_, encoding_result_size_>::train(const StringT& string_1,
-                                                               const StringT& string_2) {
+        EncoderTrainer<StringT_, encoding_result_size_>::train(
+            const StringT& string_1, const StringT& string_2,
+            const std::optional<DiffScalarFunction>& diff_scalar_function) { // Non-wrapped
         const NeuralNetwork original_encoder_nn = _encoder.get_word_vector_encoder_nn();
         const float original_cost = cost(string_1, string_2);
 
-        const NeuralNetwork::NeuralNetworkDiff diff = original_encoder_nn.random_diff();
+        const NeuralNetwork::NeuralNetworkDiff random_diff = original_encoder_nn.random_diff();
+        const NeuralNetwork::NeuralNetworkDiff diff =
+            diff_scalar_function.has_value()
+                ? random_diff * diff_scalar_function.value()(_training_iterations,
+                                                             _encoder_nn_edits, _cost_log)
+                : random_diff;
 
         modify_encoder(diff);
 
@@ -209,7 +236,8 @@ namespace efuzz {
     template <StdString StringT_, IntegralConstant encoding_result_size_>
     typename EncoderTrainer<StringT_, encoding_result_size_>::TrainingResult
         EncoderTrainer<StringT_, encoding_result_size_>::train(
-            const std::vector<std::pair<StringT, StringT>>& string_pairs) { // Non-wrapped
+            const std::vector<std::pair<StringT, StringT>>& string_pairs,
+            const std::optional<DiffScalarFunction>& diff_scalar_function) { // Non-wrapped
         if (string_pairs.empty()) {
             throw std::runtime_error("Empty string pairs provided");
         }
@@ -228,7 +256,12 @@ namespace efuzz {
 
         average_cost_of_unmodified_encoder /= string_pairs.size();
 
-        NeuralNetwork::NeuralNetworkDiff diff = original_encoder_nn.random_diff();
+        const NeuralNetwork::NeuralNetworkDiff random_diff = original_encoder_nn.random_diff();
+        const NeuralNetwork::NeuralNetworkDiff diff =
+            diff_scalar_function.has_value()
+                ? random_diff * diff_scalar_function.value()(_training_iterations,
+                                                             _encoder_nn_edits, _cost_log)
+                : random_diff;
 
         modify_encoder(diff);
 
@@ -257,7 +290,10 @@ namespace efuzz {
 
     template <StdString StringT_, IntegralConstant encoding_result_size_>
     typename EncoderTrainer<StringT_, encoding_result_size_>::TrainingResult
-        EncoderTrainer<StringT_, encoding_result_size_>::train_random(std::size_t iterations) {
+        EncoderTrainer<StringT_, encoding_result_size_>::train_random(
+            std::size_t iterations,
+            const std::optional<DiffScalarFunction>& diff_scalar_function) { // Non-wrapped
+
         if (!_dataset) {
             throw std::runtime_error("No dataset provided");
         }
@@ -285,12 +321,13 @@ namespace efuzz {
             string_pairs.emplace_back((*_dataset.value()) [index_1], (*_dataset.value()) [index_2]);
         }
 
-        return train(string_pairs);
+        return train(string_pairs, diff_scalar_function);
     }
 
     template <StdString StringT_, IntegralConstant encoding_result_size_>
     typename EncoderTrainer<StringT_, encoding_result_size_>::TrainingResult
-        EncoderTrainer<StringT_, encoding_result_size_>::train_all() { // Non-wrapped
+        EncoderTrainer<StringT_, encoding_result_size_>::train_all(
+            const std::optional<DiffScalarFunction>& diff_scalar_function) { // Non-wrapped
         if (!_dataset) {
             throw std::runtime_error("No dataset provided");
         }
@@ -332,7 +369,12 @@ namespace efuzz {
 
         average_cost_of_unmodified_encoder /= comparisons;
 
-        NeuralNetwork::NeuralNetworkDiff diff = original_encoder_nn.random_diff();
+        const NeuralNetwork::NeuralNetworkDiff random_diff = original_encoder_nn.random_diff();
+        const NeuralNetwork::NeuralNetworkDiff diff =
+            diff_scalar_function.has_value()
+                ? random_diff * diff_scalar_function.value()(_training_iterations,
+                                                             _encoder_nn_edits, _cost_log)
+                : random_diff;
 
         modify_encoder(diff);
 
@@ -369,6 +411,7 @@ namespace efuzz {
     auto EncoderTrainer<StringT_, encoding_result_size_>::modify_encoder(
         const NeuralNetwork::NeuralNetworkDiff& diff) -> this_type& {
         _encoder.modify_word_vector_encoder_nn(diff);
+        _encoder_nn_edits++;
 
         return *this;
     }
