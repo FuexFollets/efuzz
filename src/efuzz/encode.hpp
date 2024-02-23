@@ -61,6 +61,7 @@ namespace efuzz {
         [[nodiscard]] encoding_result_type get_encoding_result() const;
 
         this_type& set_word_vector_encoder_nn(const NeuralNetwork& neural_network);
+        this_type& modify_word_vector_encoder_nn(const NeuralNetwork::NeuralNetworkDiff& diff);
         [[nodiscard]] NeuralNetwork get_word_vector_encoder_nn() const;
         this_type& set_encoding_nn_layer_sizes(const std::vector<std::size_t>& layer_sizes,
                                                bool random = true);
@@ -106,6 +107,10 @@ namespace efuzz {
     template <StdString StringT_, IntegralConstant encoding_result_size_>
     auto Encoder<StringT_, encoding_result_size_>::encode_letter(const char_type& letter)
         -> this_type& {
+        if (_word_vector_encoder_nn.layer_sizes.empty()) {
+            throw std::runtime_error("Word vector encoder neural network not set");
+        }
+
         Eigen::Vector<float, char_encoder_size::value> letter_binary_encoding;
 
         char_type mask = 1;
@@ -141,6 +146,14 @@ namespace efuzz {
     auto Encoder<StringT_, encoding_result_size_>::set_word_vector_encoder_nn(
         const NeuralNetwork& neural_network) -> this_type& {
         _word_vector_encoder_nn = neural_network;
+
+        return *this;
+    }
+
+    template <StdString StringT_, IntegralConstant encoding_result_size_>
+    auto Encoder<StringT_, encoding_result_size_>::modify_word_vector_encoder_nn(
+        const NeuralNetwork::NeuralNetworkDiff& diff) -> this_type& {
+        _word_vector_encoder_nn.modify(diff);
 
         return *this;
     }
